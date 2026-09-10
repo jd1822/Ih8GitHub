@@ -56,7 +56,7 @@ jobs:
           "$SDKMANAGER" --version
 
           # Feed an effectively unlimited stream of "y" answers.
-          yes y | "$SDKMANAGER" --sdk_root="$ANDROID_SDK_ROOT" --licenses
+          yes | "$SDKMANAGER" --sdk_root="$ANDROID_SDK_ROOT" --licenses || true
 
           "$SDKMANAGER" --sdk_root="$ANDROID_SDK_ROOT" \
             "platform-tools" \
