@@ -3,11 +3,12 @@ name: Build ProjectorArt APK
 on:
   workflow_dispatch: {}
 
+env:
+  ANDROID_SDK_ROOT: /usr/local/android-sdk
+
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      ANDROID_SDK_ROOT: /usr/local/android-sdk
 
     steps:
       - name: Checkout repository
@@ -32,12 +33,23 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      - name: Install Android SDK & required build tools
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 33
-          build-tools: '33.0.2'
-          force-avd-creation: false
+      - name: Install Android SDK commandline tools and required packages
+        run: |
+          set -e
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends unzip curl
+          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
+          cd /tmp
+          # download latest command-line tools (Google may change filename over time)
+          curl -fSL -o commandlinetools.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
+          unzip -q commandlinetools.zip -d $ANDROID_SDK_ROOT/cmdline-tools
+          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools/latest
+          mv $ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools/* $ANDROID_SDK_ROOT/cmdline-tools/latest/ || true
+          echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$ANDROID_SDK_ROOT/platform-tools" >> $GITHUB_PATH
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
+          yes | sdkmanager --licenses
+          sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
 
       - name: Make Gradle wrapper executable (if present)
         run: |
@@ -47,7 +59,8 @@ jobs:
 
       - name: Build debug APK
         working-directory: ProjectorArt
-        run: ./gradlew assembleDebug --no-daemon
+        run: |
+          ./gradlew assembleDebug --no-daemon
 
       - name: Upload debug APK artifact
         uses: actions/upload-artifact@v4
