@@ -51,9 +51,14 @@ jobs:
           # Make SDK discovery unambiguous for the Android Gradle Plugin.
           printf 'sdk.dir=%s\n' "$ANDROID_SDK_ROOT" > "$GITHUB_WORKSPACE/ProjectorArt/local.properties"
 
-          sdkmanager --version
-          yes | sdkmanager --licenses
-          sdkmanager \
+          SDKMANAGER="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+
+          "$SDKMANAGER" --version
+
+          # Feed an effectively unlimited stream of "y" answers.
+          yes y | "$SDKMANAGER" --sdk_root="$ANDROID_SDK_ROOT" --licenses
+
+          "$SDKMANAGER" --sdk_root="$ANDROID_SDK_ROOT" \
             "platform-tools" \
             "platforms;android-33" \
             "build-tools;33.0.2"
